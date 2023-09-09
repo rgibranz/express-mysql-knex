@@ -7,6 +7,8 @@ let bcrypt = require("bcrypt");
 
 const { authenticateToken } = require("../middleware/authMiddleware");
 
+require("dotenv").config();
+
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -23,7 +25,9 @@ router.post("/login", async (req, res) => {
   }
 
   // Buat token JWT
-  const token = jwt.sign({ userId: user.id }, "rahasia", { expiresIn: "1h" });
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+    expiresIn: "1h",
+  });
 
   // Simpan token dalam tabel "jwt_tokens"
   await knex("jwt_tokens").insert({ user_id: user.id, token });

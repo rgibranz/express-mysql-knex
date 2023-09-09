@@ -1,6 +1,8 @@
 const jwt = require("jsonwebtoken");
 const knex = require("../knex");
 
+require("dotenv").config();
+
 function authenticateToken(req, res, next) {
   const token = req.header("Authorization");
 
@@ -8,7 +10,7 @@ function authenticateToken(req, res, next) {
     return res.status(401).json({ error: "Token tidak ada." });
   }
 
-  jwt.verify(token, "rahasia", async (err, payload) => {
+  jwt.verify(token, process.env.JWT_SECRET, async (err, payload) => {
     if (err) {
       return res.status(403).json({ error: "Token tidak valid." });
     }
