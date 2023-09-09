@@ -1,11 +1,15 @@
 var express = require("express");
 var router = express.Router();
+
 var bcrypt = require("bcrypt");
+
 const knex = require("../knex");
 const saltRounds = 10;
 
+const { authenticateToken } = require("../middleware/authMiddleware");
+
 // READ (Mengambil Daftar Data Pengguna)
-router.get("/", async (req, res) => {
+router.get("/", authenticateToken, async (req, res) => {
   try {
     const users = await knex("users").select("*"); // Memilih semua kolom dari tabel "users"
     res.json(users);
@@ -16,7 +20,7 @@ router.get("/", async (req, res) => {
 });
 
 // CREATE (Tambah Data Pengguna)
-router.post("/", async (req, res) => {
+router.post("/", authenticateToken, async (req, res) => {
   try {
     const newUser = req.body;
     const hashedPassword = await bcrypt.hash(newUser.password, saltRounds);
@@ -30,7 +34,7 @@ router.post("/", async (req, res) => {
 });
 
 // READ (Mengambil Data Pengguna berdasarkan ID)
-router.get("/:id", async (req, res) => {
+router.get("/:id", authenticateToken, async (req, res) => {
   try {
     const userId = req.params.id;
     const user = await knex("users").where("id", userId).first();
@@ -46,7 +50,7 @@ router.get("/:id", async (req, res) => {
 });
 
 // UPDATE (Perbarui Data Pengguna berdasarkan ID)
-router.put("/:id", async (req, res) => {
+router.put("/:id", authenticateToken, async (req, res) => {
   try {
     const userId = req.params.id;
     const { new_password, ...otherData } = req.body;
@@ -67,7 +71,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE (Hapus Data Pengguna berdasarkan ID)
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", authenticateToken, async (req, res) => {
   try {
     const userId = req.params.id;
     await knex("users").where("id", userId).del();
