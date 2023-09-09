@@ -4,7 +4,7 @@ let router = express.Router();
 let knex = require("../knex");
 let jwt = require("jsonwebtoken");
 let bcrypt = require("bcrypt");
-
+let uuid = require("uuid");
 const { authenticateToken } = require("../middleware/authMiddleware");
 
 require("dotenv").config();
@@ -26,13 +26,19 @@ router.post("/login", async (req, res) => {
 
   // Buat token JWT
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
-    expiresIn: "1h",
+    expiresIn: "10m",
   });
 
   // Simpan token dalam tabel "jwt_tokens"
   await knex("jwt_tokens").insert({ user_id: user.id, token });
 
-  res.json({ token });
+  const refreshToken = uuid.v4(); // Buat token penyegar baru
+  await knex("refresh_tokens").insert({
+    user_id: user.id,
+    token: refreshToken,
+  });
+
+  res.json({ token, refreshToken });
 });
 
 router.post("/logout", authenticateToken, async (req, res) => {
@@ -42,6 +48,29 @@ router.post("/logout", authenticateToken, async (req, res) => {
   await knex("jwt_tokens").where({ user_id: req.user.userId, token }).delete();
 
   res.json({ message: "Logout berhasil." });
+});
+
+// Endpoint untuk mendapatkan token penyegar setelah login
+router.post("/refresh-token", async (req, res) => {
+  const refreshToken = req.body.refreshToken;
+
+  // Periksa apakah token penyegar valid
+  const validRefreshToken = await knex("refresh_tokens")
+    .where({ token: refreshToken })
+    .first();
+
+  if (!validRefreshToken) {
+    return res.status(403).json({ error: "Token penyegar tidak valid." });
+  }
+
+  // Buat token akses baru untuk pengguna
+  const accessToken = jwt.sign(
+    { userId: validRefreshToken.user_id },
+    process.env.JWT_SECRET,
+    { expiresIn: "15m" }
+  );
+
+  res.json({ accessToken });
 });
 
 module.exports = router;
