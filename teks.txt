@@ -1,0 +1,7 @@
+saya sudah membuat knexfile menggunakan "knex init" lalu saya juga membuat file knex.js yang berisi
+
+const config = require("./knexfile").config;
+const knex = require("knex")(config);
+module.export = knex;
+
+bagaimana cara saya menggunakan knex migration
